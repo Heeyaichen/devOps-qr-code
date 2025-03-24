@@ -1,0 +1,28 @@
+name: Build and publish image to Docker Hub
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "api/Dockerfile"
+      - "front-end-nextjs/Dockerfile"
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  publish_images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Build the Docker image
+        run: |
+          docker build ./api/ -t chenkonsam/devops-qr-code-api:latest
+          docker build ./front-end-nextjs -t chenkonsam/devops-qr-code-front-end:v3
+
+      - name: Push image to Docker Hub
+        run: |
+          docker login -u chenkonsam -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          docker push chenkonsam/devops-qr-code-api:latest
+          docker push chenkonsam/devops-qr-code-front-end:v3
