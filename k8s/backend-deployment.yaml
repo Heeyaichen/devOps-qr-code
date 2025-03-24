@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qr-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: qr-api
+  template:
+    metadata:
+      labels:
+        app: qr-api
+    spec:
+      containers:
+      - name: qr-api
+        image: chenkonsam/devops-qr-code-api:latest
+        ports:
+          - containerPort: 80
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        env:
+          - name: AZURE_STORAGE_CONNECTION_STRING
+            valueFrom:
+              secretKeyRef:
+                name: azure-storage-secret
+                key: AZURE_STORAGE_CONNECTION_STRING
+          - name: AZURE_STORAGE_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: azure-storage-secret
+                key: AZURE_STORAGE_ACCOUNT
+          - name: AZURE_CONTAINER_NAME
+            valueFrom:
+              secretKeyRef:
+                name: azure-storage-secret
+                key: AZURE_CONTAINER_NAME
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qr-api-service
+spec:
+  selector:
+    app: qr-api
+  ports:
+    - protocol: TCP
+      port: 80         
+      targetPort: 80  
+  type: ClusterIP

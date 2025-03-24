@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qr-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: qr-frontend
+  template:
+    metadata:
+      labels:
+        app: qr-frontend
+    spec:
+      containers:
+      - name: qr-frontend
+        image: chenkonsam/devops-qr-code-frontend:v3
+        ports:
+          - containerPort: 3000
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qr-frontend-service
+spec:
+  selector:
+    app: qr-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
+
