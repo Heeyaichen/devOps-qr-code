@@ -1,5 +1,9 @@
+# Workflow name as it appears in Github Actions UI
 name: Build and publish image to Docker Hub
+
+# Controls/Define when the action/workflow will run.
 on:
+  # Allow manual triggers with custom inputs
   workflow_dispatch:
     inputs:
       push_images:
@@ -7,29 +11,40 @@ on:
         type: boolean
         required: true
         default: false
+  # Trigger the workflow on push events to the main branch
   push:
     branches: ["main"]
+    # Only trigger the workflow for changes to the Dockerfiles
     paths:
       - "api/Dockerfile"
       - "front-end-nextjs/Dockerfile"
+  # Trigger the workflow on pull request events to the main branch
   pull_request:
     branches: ["main"]
 
+# Define the jobs that will run in this workflow
 jobs:
   publish_images:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Get the code from the repository
       - name: Check out the repository
         uses: actions/checkout@v4
 
+      # Step 2: Build both the Docker images
       - name: Build the Docker image
         run: |
           docker build ./api/ -t chenkonsam/devops-qr-code-api:latest
           docker build ./front-end-nextjs -t chenkonsam/devops-qr-code-front-end:v3
 
+      # Step 3: Push the Docker images to Docker Hub if:
+      # - Triggered by a push event to the main branch, OR
+      # - Triggered by a manual workflow dispatch event with the `push_images`=true
       - name: Push image to Docker Hub
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push_images == true)
         run: |
+          # Login to Docker Hub using access token stored in GitHub Secrets
           docker login -u chenkonsam -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          # Push both images to Docker Hub
           docker push chenkonsam/devops-qr-code-api:latest
           docker push chenkonsam/devops-qr-code-front-end:v3
