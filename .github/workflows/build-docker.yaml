@@ -1,6 +1,12 @@
 name: Build and publish image to Docker Hub
 on:
   workflow_dispatch:
+    inputs:
+      push_images:
+        description: "Push images to Docker Hub"
+        type: boolean
+        required: true
+        default: false
   push:
     branches: ["main"]
     paths:
@@ -22,6 +28,7 @@ jobs:
           docker build ./front-end-nextjs -t chenkonsam/devops-qr-code-front-end:v3
 
       - name: Push image to Docker Hub
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push_images == true)
         run: |
           docker login -u chenkonsam -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
           docker push chenkonsam/devops-qr-code-api:latest
