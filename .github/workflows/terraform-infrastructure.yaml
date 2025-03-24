@@ -1,0 +1,84 @@
+# Terraform Infrastructure Workflow
+# Prerequisites:
+# 1. Generate Azure credentials using Azure CLI:
+#    az ad sp create-for-rbac --name "github-actions" --role contributor \
+#    --scopes /subscriptions/<subscription-id> --sdk-auth
+#
+# 2. Add the JSON output as a GitHub Secret named 'AZURE_CREDENTIALS'
+#    Go to Settings > Secrets and variables > Actions > New repository secret
+
+name: Terraform Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy infrastructure to"
+        type: choice
+        required: true
+        options:
+          - "development"
+          - "staging"
+          - "production"
+      apply_changes:
+        description: "Apply changes to Terraform configuration"
+        type: boolean
+        required: true
+        default: false
+  push:
+    branches: ["main"]
+    paths:
+      - "infrastructure/*.tf"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "infrastructure/*.tf"
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: true
+
+        # Login to Azure using the Azure credentials stored in the 'AZURE_CREDENTIALS' GitHub Secret
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        run: terraform init
+
+      # Checks that all Terraform configuration files adhere to a canonical format
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      # Generates an execution plan for Terraform
+      - name: Terraform Plan
+        run: terraform plan -input=false
+
+        # On push to "main", build or change infrastructure according to Terraform configuration files
+      - name: Terraform Apply
+        # Only apply changes if the event that triggered the workflow is a push to the main branch or a manual workflow dispatch event with the `apply_changes`=true
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply_changes == true)
+        run: terraform apply -auto-approve -input=false
