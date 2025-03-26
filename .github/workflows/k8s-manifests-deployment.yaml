@@ -50,9 +50,20 @@ jobs:
         with:
           terraform_wrapper: false
 
+      # Step 3: Login to Azure using the credentials stored in the GitHub repository secrets.
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       # Step 4: Initialize and refresh Terraform state
       - name: Initialize Terraform
         working-directory: ./infrastructure
+        env:
+          ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+          ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+          ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+          ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
         run: |
           terraform init
           terraform refresh
