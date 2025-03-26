@@ -107,6 +107,7 @@ jobs:
       - name: Set AKS Cluster Context
         uses: azure/aks-set-context@v1
         with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
           resource-group: ${{ needs.verify-terrrafom.outputs.resource_group }}
           cluster-name: ${{ needs.verify-terrrafom.outputs.aks_name }}
 
