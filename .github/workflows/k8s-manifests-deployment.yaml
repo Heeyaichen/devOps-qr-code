@@ -44,7 +44,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Retrieve Terraform Outputs from the infrastructure
+      # Step 2: Setup Terraform.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: false
+
+      # Step 4: Initialize and refresh Terraform state
+      - name: Initialize Terraform
+        working-directory: ./infrastructure
+        run: |
+          terraform init
+          terraform refresh
+
+      # Step 5: Retrieve Terraform Outputs from the infrastructure
       - name: Get Terraform Outputs
         working-directory: ./infrastructure
         id: terraform
