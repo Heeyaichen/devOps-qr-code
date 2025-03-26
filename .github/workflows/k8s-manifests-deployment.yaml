@@ -62,6 +62,7 @@ jobs:
         run: |
           # Get the subscription ID from current Azure CLI session
           export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+          export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
 
           # Initialize and refresh Terraform
           terraform init
