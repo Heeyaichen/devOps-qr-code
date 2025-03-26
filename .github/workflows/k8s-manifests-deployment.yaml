@@ -106,18 +106,13 @@ jobs:
         # Step 4: Set the AKS cluster context to target the correct cluster using Azure CLI.
       - name: Set AKS Cluster Context
         run: |
-          az account set --subscription $(jq -r .subscriptionId <<< '${{ secrets.AZURE_CREDENTIALS }}')
-          az aks get-credentials --resource-group ${{ needs.verify-terrrafom.outputs.resource_group }} --name ${{ needs.verify-terrrafom.outputs.aks_name }}
+          az aks get-credentials --resource-group ${{ needs.verify-terrrafom.outputs.resource_group }} --name ${{ needs.verify-terrrafom.outputs.aks_name }} --admin
 
       # Step 5: Set the Azure CLI defaults to the resource group.
       - name: Set Azure CLI defaults
         run: az configure --defaults group=${{ needs.verify-terrrafom.outputs.resource_group }}
 
-      # Step 6: Retrieve AKS credentials (update kubeconfig)
-      - name: Get AKS Credentials
-        run: az aks get-credentials --resource-group ${{ needs.verify-terrrafom.outputs.resource_group }} --name ${{ needs.verify-terrrafom.outputs.aks_name }}
-
-      # Step 7: Create the Azure Storage Secret by updating the secret template.
+      # Step 6: Create the Azure Storage Secret by updating the secret template.
       - name: Create Azure Storage Secret
         run: |
           # Create base64 encoded credentials for the storage account connection string.
@@ -126,7 +121,7 @@ jobs:
           # Update the placeholder text in the secret template with the encoded values.
           sed -i "s|<base64-encoded-storage-account-connection-string>|$STORAGE_CONNECTION_STRING_BASE64|g" k8s/azure-storage-secret.yaml
 
-      # Step 8: Deploy Kubernetes manifests if simulation is disabled.
+      # Step 7: Deploy Kubernetes manifests if simulation is disabled.
       - name: Deploy Kubernetes Resources
         if: ${{ github.event.inputs.simulate_deployment == false }}
         working-directory: ./k8s
@@ -140,7 +135,7 @@ jobs:
           echo "Deploying Frontend..."
           kubectl apply -f k8s/frontend-deployment.yaml
 
-      # Step 9: Verify the deployments by checking pods, services.
+      # Step 8: Verify the deployments by checking pods, services.
       - name: Verify Deployments
         run: |
           echo "Checking Pod Status..."
@@ -149,7 +144,7 @@ jobs:
           echo "Checking Services..."
           kubectl get svc
 
-      # Step 10: Collect Debug information (if deployment fails)
+      # Step 9: Collect Debug information (if deployment fails)
       - name: Debug Info (if deployment fails)
         if: failure()
         run: |
@@ -160,7 +155,7 @@ jobs:
             echo "=== End logs for $pod ==="
           done
 
-      # Step 11: Skip Deployment steps in simulation mode.
+      # Step 10: Skip Deployment steps in simulation mode.
       - name: Simulate Deployment
         if: ${{ github.event.inputs.simulate_deployment == true }}
         run: |
