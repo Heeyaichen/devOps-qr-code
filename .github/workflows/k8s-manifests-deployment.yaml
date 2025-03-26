@@ -1,0 +1,168 @@
+name:
+  Deploy to Azure Kubernetes Service
+  # Note: Ensure that the secret AZURE_STORAGE_CONNECTION_STRING is set in your GitHub repository.
+
+on:
+  # Trigger this workflow when the Terraform Infrastructure and Build and publish image to Docker Hub workflows are completed successfully.
+  workflow_run:
+    workflows:
+      - "Terraform Infrastructure"
+      - "Build and publish image to Docker Hub"
+    types:
+      - completed
+
+  # Allow manual triggering and simulation of the deployment.
+  workflow_dispatch:
+    inputs:
+      simulate_deployment:
+        description: "Simulate deployment (true to only test, false to deploy)"
+        type: boolean
+        required: true
+        default: true
+
+  # Trigger on pushes or pull requests to the K8s manifests.
+  push:
+    paths:
+      - "k8s/*.yaml"
+    branches: [main]
+  pull_request:
+    paths:
+      - "k8s/*.yaml"
+    branches: [main]
+
+env:
+  STORAGE_ACCOUNT_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+
+jobs:
+  verify-terrrafom:
+    name: Verify Terraform
+    runs-on: ubuntu-latest
+    # Run this job only if the Terraform Infrastructure workflow completed successfully.
+    if: ${{ github.event.workflow_run.name == 'Terraform Infrastructure' && github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      # Step 1: Checkout the code.
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Retrieve Terraform Outputs from the infrastructure
+      - name: Get Terraform Outputs
+        working-directory: ./infrastructure
+        id: terraform
+        run: |
+          echo "resource_group=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "aks_name=$(terraform output -raw aks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "storage_account=$(terraform output -raw storage_account_name)" >> $GITHUB_OUTPUT
+          echo "container=$(terraform output -raw container_name)" >> $GITHUB_OUTPUT
+
+    outputs:
+      resource_group: ${{ steps.terraform.outputs.resource_group }}
+      aks_name: ${{ steps.terraform.outputs.aks_name }}
+      storage_account: ${{ steps.terraform.outputs.storage_account_name }}
+      container: ${{ steps.terraform.outputs.container_name }}
+
+  verify-docker:
+    name: Verify Docker Build
+    runs-on: ubuntu-latest
+    # Run this job only if the Build and publish image to Docker Hub workflow completed successfully.
+    if: ${{ github.event.workflow_run.name == 'Build and publish image to Docker Hub' && github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      # Step 1: Check the Docker Build Status and get the Docker Images ouputs.
+      - name: Check Docker Build Status and get Docker Images
+        id: docker
+        run: |
+          echo "Docker images are ready for deployment"
+          echo "api_image=chenkonsam/devops-qr-code-api:latest" >> $GITHUB_OUTPUT
+          echo "frontend_image=chenkonsam/devops-qr-code-front-end:v3" >> $GITHUB_OUTPUT
+
+    outputs:
+      api_image: ${{ steps.docker.outputs.api_image }}
+      frontend_image: ${{ steps.docker.outputs.frontend_image }}
+
+  deploy:
+    name: Deploy to AKS
+    needs: [verify-terrrafom, verify-docker]
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the latest repository code.
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Authenticate to Azure using the credentials stored in the GitHub repository secrets.
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Step 3: Display Terraform and Docker outputs for logging purposes.
+      - name: Use Terraform Outputs
+        run: |
+          echo "Using Terraform Outputs..."
+          echo "Resource Group: ${{ needs.verify-terrrafom.outputs.resource_group }}"
+          echo "AKS Cluster: ${{ needs.verify-terrrafom.outputs.aks_name }}"
+          echo "Storage Account: ${{ needs.verify-terrrafom.outputs.storage_account }}"
+          echo "Docker Images: ${{ needs.verify-docker.outputs.api_image }} and ${{ needs.verify-docker.outputs.frontend_image }}"
+
+      # Step 4: Set the AKS cluster context to target the correct cluster.
+      - name: Set AKS Cluster Context
+        uses: azure/aks-set-context@v1
+        with:
+          resource-group: ${{ needs.verify-terrrafom.outputs.resource_group }}
+          cluster-name: ${{ needs.verify-terrrafom.outputs.aks_name }}
+
+      # Step 5: Set the Azure CLI defaults to the resource group.
+      - name: Set Azure CLI defaults
+        run: az configure --defaults group=${{ needs.verify-terrrafom.outputs.resource_group }}
+
+      # Step 6: Retrieve AKS credentials (update kubeconfig)
+      - name: Get AKS Credentials
+        run: az aks get-credentials --resource-group ${{ needs.verify-terrrafom.outputs.resource_group }} --name ${{ needs.verify-terrrafom.outputs.aks_name }}
+
+      # Step 7: Create the Azure Storage Secret by updating the secret template.
+      - name: Create Azure Storage Secret
+        run: |
+          # Create base64 encoded credentials for the storage account connection string.
+          STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$AZURE_STORAGE_CONNECTION_STRING" | base64)
+
+          # Update the placeholder text in the secret template with the encoded values.
+          sed -i "s|<base64-encoded-storage-account-connection-string>|$STORAGE_CONNECTION_STRING_BASE64|g" k8s/azure-storage-secret.yaml
+
+      # Step 8: Deploy Kubernetes manifests if simulation is disabled.
+      - name: Deploy Kubernetes Resources
+        if: ${{ github.event.inputs.simulate_deployment == false }}
+        working-directory: ./k8s
+        run: |
+          echo "Applying Azure Storage Secret..."
+          kubectl apply -f k8s/azure-storage-secret.yaml
+
+          echo "Deploying Backend..."
+          kubectl apply -f k8s/backend-deployment.yaml
+
+          echo "Deploying Frontend..."
+          kubectl apply -f k8s/frontend-deployment.yaml
+
+      # Step 9: Verify the deployments by checking pods, services.
+      - name: Verify Deployments
+        run: |
+          echo "Checking Pod Status..."
+          kubectl get pods
+
+          echo "Checking Services..."
+          kubectl get svc
+
+      # Step 10: Collect Debug information (if deployment fails)
+      - name: Debug Info (if deployment fails)
+        if: failure()
+        run: |
+          echo "Fetching pod logs..."
+          for pod in $(kubectl get pods -o jsonpath='{.items[*].metadata.name}'); do
+            echo "=== Logs for $pod ==="
+            kubectl logs $pod || true
+            echo "=== End logs for $pod ==="
+          done
+
+      # Step 11: Skip Deployment steps in simulation mode.
+      - name: Simulate Deployment
+        if: ${{ github.event.inputs.simulate_deployment == true }}
+        run: |
+          echo "Simulation mode: Deployment steps skipped."
