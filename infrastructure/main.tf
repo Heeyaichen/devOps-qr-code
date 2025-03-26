@@ -1,3 +1,36 @@
+// Resource Group for Terraform State
+resource "azurerm_resource_group" "terraform_state" {
+  name     = "terraform-state-rg"
+  location = "eastus"
+
+  tags = {
+    environment = "development"
+    purpose     = "terraform-state"
+  }
+}
+
+// Storage Account for Terraform State
+resource "azurerm_storage_account" "terraform_state" {
+  name                     = "tfstateqrcode123"
+  resource_group_name      = azurerm_resource_group.terraform_state.name
+  location                 = azurerm_resource_group.terraform_state.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  tags = {
+    environment = "development"
+    purpose     = "terraform-state"
+  }
+}
+
+// Container for Terraform State
+resource "azurerm_storage_container" "terraform_state" {
+  name                  = "tfstate"
+  storage_account_id    = azurerm_storage_account.terraform_state.id
+  container_access_type = "private"
+}
+
+// Main Resource Group for AKS Cluster
 resource "azurerm_resource_group" "main" {
   name     = "qr-code-rg"
   location = "East US"
