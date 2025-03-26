@@ -37,8 +37,8 @@ jobs:
   verify-terrrafom:
     name: Verify Terraform
     runs-on: ubuntu-latest
-    # Run this job only if the Terraform Infrastructure workflow completed successfully.
-    if: ${{ github.event.workflow_run.name == 'Terraform Infrastructure' && github.event.workflow_run.conclusion == 'success' }}
+    # Run this job if it's manually triggered (workflow_dispatch) OR if the Terraform Infrastructure workflow ran successfully.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.name == 'Terraform Infrastructure' && github.event.workflow_run.conclusion == 'success') }}
     steps:
       # Step 1: Checkout the code.
       - name: Checkout code
@@ -63,8 +63,8 @@ jobs:
   verify-docker:
     name: Verify Docker Build
     runs-on: ubuntu-latest
-    # Run this job only if the Build and publish image to Docker Hub workflow completed successfully.
-    if: ${{ github.event.workflow_run.name == 'Build and publish image to Docker Hub' && github.event.workflow_run.conclusion == 'success' }}
+    # Run if manually triggered OR if the Docker Build and publish image workflow ran successfully.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.name == 'Build and publish image to Docker Hub' && github.event.workflow_run.conclusion == 'success') }}
 
     steps:
       # Step 1: Check the Docker Build Status and get the Docker Images ouputs.
