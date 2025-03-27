@@ -71,17 +71,12 @@ jobs:
           # Initialize Terraform
           terraform init
 
-          # Explicitly read from state file
-          echo "resource_group=$(terraform output -state=terraform.tfstate -raw resource_group_name)" >> $GITHUB_OUTPUT
-          echo "aks_name=$(terraform output -state=terraform.tfstate -raw aks_cluster_name)" >> $GITHUB_OUTPUT
-          echo "storage_account=$(terraform output -state=terraform.tfstate -raw storage_account_name)" >> $GITHUB_OUTPUT
-          echo "container=$(terraform output -state=terraform.tfstate -raw container_name)" >> $GITHUB_OUTPUT
+          echo "resource_group=$(jq -r '.outputs.resource_group_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
+          echo "aks_name=$(jq -r '.outputs.aks_cluster_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
 
     outputs:
       resource_group: ${{ steps.terraform.outputs.resource_group }}
       aks_name: ${{ steps.terraform.outputs.aks_name }}
-      storage_account: ${{ steps.terraform.outputs.storage_account }}
-      container: ${{ steps.terraform.outputs.container }}
 
   verify-docker:
     name: Verify Docker Build
