@@ -56,9 +56,10 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Step 4: Initialize and refresh Terraform state
+      # Step 4: Initialize Terraform
       - name: Initialize Terraform
         working-directory: ./infrastructure
+        id: terraform
         env:
           ARM_SUBSCRIPTION_ID: $(az account show --query id -o tsv)
           ARM_TENANT_ID: $(az account show --query tenantId -o tsv)
@@ -70,28 +71,11 @@ jobs:
           # Initialize Terraform
           terraform init
 
-      # Step 5: Get Terraform Outputs from artifacts
-      - name: Download Terraform Outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-outputs
-          path: ./terraform-outputs
-
-      - name: Use Terraform Outputs
-        id: terraform
-        run: |
-          # Read values from JSON and set as outputs
-          RESOURCE_GROUP=$(jq -r .resource_group_name.value terraform-outputs/terraform-outputs.json)
-          AKS_NAME=$(jq -r .aks_cluster_name.value terraform-outputs/terraform-outputs.json)
-          STORAGE_ACCOUNT=$(jq -r .storage_account_name.value terraform-outputs/terraform-outputs.json)
-          CONTAINER_NAME=$(jq -r .container_name.value terraform-outputs/terraform-outputs.json)
-
-          # Set outputs for use in later steps
-          echo "resource_group=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
-          echo "aks_name=$AKS_NAME" >> $GITHUB_OUTPUT
-          echo "storage_account=$STORAGE_ACCOUNT" >> $GITHUB_OUTPUT
-          echo "container=$CONTAINER_NAME" >> $GITHUB_OUTPUT
-
+          # Get outputs directly from state file
+          echo "resource_group=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "aks_name=$(terraform output -raw aks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "storage_account=$(terraform output -raw storage_account_name)" >> $GITHUB_OUTPUT
+          echo "container=$(terraform output -raw container_name)" >> $GITHUB_OUTPUT
     outputs:
       resource_group: ${{ steps.terraform.outputs.resource_group }}
       aks_name: ${{ steps.terraform.outputs.aks_name }}
