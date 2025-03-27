@@ -109,7 +109,7 @@ jobs:
         # Step 4: Set the AKS cluster context to target the correct cluster using Azure CLI.
       - name: Set AKS Cluster Context
         run: |
-          az aks get-credentials --resource-group ${{ needs.verify-terrrafom.outputs.resource_group_name }} --name ${{ needs.verify-terrrafom.outputs.aks_name }} --admin
+          az aks get-credentials --resource-group ${{ needs.verify-terrrafom.outputs.resource_group_name }} --name ${{ needs.verify-terrrafom.outputs.aks_cluster_name }} --admin
 
       # Step 5: Set the Azure CLI defaults to the resource group.
       - name: Set Azure CLI defaults
