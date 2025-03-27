@@ -98,11 +98,6 @@ jobs:
       - name: Save Terraform Outputs
         run: terraform output -json > terraform-outputs.json
 
-      # Download the upload-artifact action explicitly
-      - name: Setup Upload Artifact
-        run: |
-          gh extension install actions/upload-artifact
-
       # Upload JSON outputs as artifact
       - name: Upload Terraform Outputs
         uses: actions/upload-artifact@v4
