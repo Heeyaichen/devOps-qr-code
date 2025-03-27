@@ -50,7 +50,6 @@ jobs:
 
       # Step 2: Download the Terraform outputs artifact from triggering workflow.
       - name: Download Artifact
-        if: github.event_name == 'workflow_run'
         uses: actions/download-artifact@v4
         with:
           name: terraform-outputs
