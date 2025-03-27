@@ -44,35 +44,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Setup Terraform.
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_wrapper: false
-
-      # Step 3: Login to Azure using the credentials stored in the GitHub repository secrets.
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # Step 4: Initialize Terraform and get the outputs.
-      - name: Initialize Terraform
+      - name: Get Terraform Outputs
         working-directory: ./infrastructure
         id: terraform
-        env:
-          ARM_SUBSCRIPTION_ID: $(az account show --query id -o tsv)
-          ARM_TENANT_ID: $(az account show --query tenantId -o tsv)
         run: |
-
-          # Initialize Terraform
-          terraform init
-
-          # Explicitly read from state file
-          echo "resource_group=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
-          echo "aks_name=$(terraform output -raw aks_cluster_name)" >> $GITHUB_OUTPUT
-          echo "storage_account=$(terraform output -raw storage_account_name)" >> $GITHUB_OUTPUT
-          echo "container=$(terraform output -raw container_name)" >> $GITHUB_OUTPUT
+          # Get outputs directly from state file
+            echo "resource_group=$(jq -r '.outputs.resource_group_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
+            echo "aks_name=$(jq -r '.outputs.aks_cluster_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
+            echo "storage_account=$(jq -r '.outputs.storage_account_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
+            echo "container=$(jq -r '.outputs.container_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
 
     outputs:
       resource_group: ${{ steps.terraform.outputs.resource_group }}
