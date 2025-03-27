@@ -37,6 +37,10 @@ jobs:
   verify-terrafom:
     name: Verify Terraform
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+
     # Run this job if it's manually triggered (workflow_dispatch) OR if the Terraform Infrastructure workflow ran successfully.
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.name == 'Terraform Infrastructure' && github.event.workflow_run.conclusion == 'success') }}
     steps:
