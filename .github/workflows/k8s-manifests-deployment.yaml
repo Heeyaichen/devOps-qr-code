@@ -67,7 +67,7 @@ jobs:
 
           # Initialize Terraform
           terraform init
-          terraform refresh
+          terraform plan
 
           # Explicitly read from state file
           echo "resource_group=$(terraform output -state=terraform.tfstate -raw resource_group_name)" >> $GITHUB_OUTPUT
