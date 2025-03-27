@@ -48,21 +48,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Download the Terraform outputs artifact.
+      # Step 2: Download the Terraform outputs artifact from triggering workflow.
       - name: Download Artifact
+        if: github.event_name == 'workflow_run'
         uses: actions/download-artifact@v4
         with:
           name: terraform-outputs
-          path: terraform-outputs/infrastructure/terraform-outputs.json
+          path: infrastructure
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       # Step 3: Parse the Terraform outputs and store them in the GitHub output file.
       - name: Parse Outputs
         id: parse
         run: |
-          echo "aks_cluster_name=$(jq -r '.aks_cluster_name.value' terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
-          echo "container_name=$(jq -r '.container_name.value' terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
-          echo "resource_group_name=$(jq -r '.resource_group_name.value' terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
-          echo "storage_account_name=$(jq -r '.storage_account_name.value' terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "aks_cluster_name=$(jq -r '.aks_cluster_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "container_name=$(jq -r '.container_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(jq -r '.resource_group_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "storage_account_name=$(jq -r '.storage_account_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
 
     outputs:
       aks_cluster_name: ${{ steps.parse.outputs.aks_cluster_name }}
