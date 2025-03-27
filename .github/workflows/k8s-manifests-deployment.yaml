@@ -44,33 +44,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Setup Terraform.
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_wrapper: false
-
-      # Step 3: Login to Azure using the credentials stored in the GitHub repository secrets.
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # Step 4: Initialize Terraform and get the outputs.
-      - name: Initialize Terraform
+      # Step 4: Get Terraform Outputs
+      - name: Get Terraform Outputs
         working-directory: ./infrastructure
         id: terraform
-        env:
-          ARM_SUBSCRIPTION_ID: $(az account show --query id -o tsv)
-          ARM_TENANT_ID: $(az account show --query tenantId -o tsv)
         run: |
-          # Debug output
-          echo "Using ARM_SUBSCRIPTION_ID: $ARM_SUBSCRIPTION_ID"
-          echo "Using ARM_TENANT_ID: $ARM_TENANT_ID"
-
-          # Initialize Terraform
-          terraform init
-
+          # Get the outputs directly from state file
           echo "resource_group=$(jq -r '.outputs.resource_group_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
           echo "aks_name=$(jq -r '.outputs.aks_cluster_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
 
