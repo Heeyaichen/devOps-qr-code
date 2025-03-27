@@ -71,24 +71,11 @@ jobs:
           # Initialize Terraform
           terraform init
 
-          # Verify state exists and has outputs
-          if [ ! -f "terraform.tfstate" ]; then
-            echo "Error: terraform.tfstate not found!"
-            echo "Please run Terraform Infrastructure workflow first"
-            exit 1
-          fi
-
-          # Get outputs and handle potential errors
-          if terraform output >/dev/null 2>&1; then
-            echo "resource_group=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
-            echo "aks_name=$(terraform output -raw aks_cluster_name)" >> $GITHUB_OUTPUT
-            echo "storage_account=$(terraform output -raw storage_account_name)" >> $GITHUB_OUTPUT
-            echo "container=$(terraform output -raw container_name)" >> $GITHUB_OUTPUT
-          else
-            echo "Error: No Terraform outputs found"
-            echo "Please ensure Terraform Infrastructure workflow has been run"
-            exit 1
-          fi
+          # Explicitly read from state file
+          echo "resource_group=$(terraform output -state=terraform.tfstate -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "aks_name=$(terraform output -state=terraform.tfstate -raw aks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "storage_account=$(terraform output -state=terraform.tfstate -raw storage_account_name)" >> $GITHUB_OUTPUT
+          echo "container=$(terraform output -state=terraform.tfstate -raw container_name)" >> $GITHUB_OUTPUT
 
     outputs:
       resource_group: ${{ steps.terraform.outputs.resource_group }}
