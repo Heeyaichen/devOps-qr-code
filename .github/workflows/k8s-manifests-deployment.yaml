@@ -44,18 +44,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 4: Get Terraform Outputs
-      - name: Get Terraform Outputs
+      # Step 2: Setup Terraform.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: false
+
+      # Step 3: Login to Azure using the credentials stored in the GitHub repository secrets.
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Step 4: Initialize Terraform and get the outputs.
+      - name: Initialize Terraform
         working-directory: ./infrastructure
         id: terraform
+        env:
+          ARM_SUBSCRIPTION_ID: $(az account show --query id -o tsv)
+          ARM_TENANT_ID: $(az account show --query tenantId -o tsv)
         run: |
-          # Get the outputs directly from state file
-          echo "resource_group=$(jq -r '.outputs.resource_group_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
-          echo "aks_name=$(jq -r '.outputs.aks_cluster_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
+
+          # Initialize Terraform
+          terraform init
+
+          # Explicitly read from state file
+          echo "resource_group=$(terraform output -state=terraform.tfstate -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "aks_name=$(terraform output -state=terraform.tfstate -raw aks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "storage_account=$(terraform output -state=terraform.tfstate -raw storage_account_name)" >> $GITHUB_OUTPUT
+          echo "container=$(terraform output -state=terraform.tfstate -raw container_name)" >> $GITHUB_OUTPUT
 
     outputs:
       resource_group: ${{ steps.terraform.outputs.resource_group }}
       aks_name: ${{ steps.terraform.outputs.aks_name }}
+      storage_account: ${{ steps.terraform.outputs.storage_account }}
+      container: ${{ steps.terraform.outputs.container }}
 
   verify-docker:
     name: Verify Docker Build
