@@ -44,21 +44,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Get Terraform Outputs
-        working-directory: ./infrastructure
-        id: terraform
+      # Step 2: Download the Terraform outputs artifact.
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-outputs
+          path: ./terraform-outputs
+
+      # Step 3: Parse the Terraform outputs and store them in the GitHub output file.
+      - name: Parse Outputs
+        id: parse
         run: |
-          # Get outputs directly from state file
-            echo "resource_group=$(jq -r '.outputs.resource_group_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
-            echo "aks_name=$(jq -r '.outputs.aks_cluster_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
-            echo "storage_account=$(jq -r '.outputs.storage_account_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
-            echo "container=$(jq -r '.outputs.container_name.value' terraform.tfstate)" >> $GITHUB_OUTPUT
+          echo "aks_cluster_name=$(jq -r '.aks_cluster_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "container_name=$(jq -r '.container_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(jq -r '.resource_group_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "storage_account_name=$(jq -r '.storage_account_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
 
     outputs:
-      resource_group: ${{ steps.terraform.outputs.resource_group }}
-      aks_name: ${{ steps.terraform.outputs.aks_name }}
-      storage_account: ${{ steps.terraform.outputs.storage_account }}
-      container: ${{ steps.terraform.outputs.container }}
+      aks_cluster_name: ${{ steps.parse.outputs.aks_cluster_name }}
+      container_name: ${{ steps.parse.outputs.container_name }}
+      resource_group_name: ${{ steps.parse.outputs.resource_group_name }}
+      storage_account_name: ${{ steps.parse.outputs.storage_account_name }}
 
   verify-docker:
     name: Verify Docker Build
