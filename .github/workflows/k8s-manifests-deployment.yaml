@@ -67,13 +67,12 @@ jobs:
 
           # Initialize Terraform
           terraform init
-          terraform plan
 
           # Explicitly read from state file
-          echo "resource_group=$(terraform output -state=terraform.tfstate -raw resource_group_name)" >> $GITHUB_OUTPUT
-          echo "aks_name=$(terraform output -state=terraform.tfstate -raw aks_cluster_name)" >> $GITHUB_OUTPUT
-          echo "storage_account=$(terraform output -state=terraform.tfstate -raw storage_account_name)" >> $GITHUB_OUTPUT
-          echo "container=$(terraform output -state=terraform.tfstate -raw container_name)" >> $GITHUB_OUTPUT
+          echo "resource_group=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "aks_name=$(terraform output -raw aks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "storage_account=$(terraform output -raw storage_account_name)" >> $GITHUB_OUTPUT
+          echo "container=$(terraform output -raw container_name)" >> $GITHUB_OUTPUT
 
     outputs:
       resource_group: ${{ steps.terraform.outputs.resource_group }}
