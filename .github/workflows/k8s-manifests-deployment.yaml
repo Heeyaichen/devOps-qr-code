@@ -34,7 +34,7 @@ env:
   STORAGE_ACCOUNT_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
 
 jobs:
-  verify-terrrafom:
+  verify-terrafom:
     name: Verify Terraform
     runs-on: ubuntu-latest
     # Run this job if it's manually triggered (workflow_dispatch) OR if the Terraform Infrastructure workflow ran successfully.
@@ -47,6 +47,9 @@ jobs:
       # Step 2: Download the Terraform outputs artifact.
       - name: Download Artifact
         uses: actions/download-artifact@v4
+
+      - name: List downloaded artifacts
+        run: ls -R .
 
       # Step 3: Parse the Terraform outputs and store them in the GitHub output file.
       - name: Parse Outputs
@@ -84,7 +87,7 @@ jobs:
 
   deploy:
     name: Deploy to AKS
-    needs: [verify-terrrafom, verify-docker]
+    needs: [verify-terrafom, verify-docker]
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the latest repository code.
@@ -101,19 +104,19 @@ jobs:
       - name: Use Terraform Outputs
         run: |
           echo "Using Terraform Outputs..."
-          echo "Resource Group: ${{ needs.verify-terrrafom.outputs.resource_group_name }}"
-          echo "AKS Cluster: ${{ needs.verify-terrrafom.outputs.aks_cluster_name }}"
-          echo "Storage Account: ${{ needs.verify-terrrafom.outputs.storage_account_name }}"
+          echo "Resource Group: ${{ needs.verify-terrafom.outputs.resource_group_name }}"
+          echo "AKS Cluster: ${{ needs.verify-terrafom.outputs.aks_cluster_name }}"
+          echo "Storage Account: ${{ needs.verify-terrafom.outputs.storage_account_name }}"
           echo "Docker Images: ${{ needs.verify-docker.outputs.api_image }} and ${{ needs.verify-docker.outputs.frontend_image }}"
 
         # Step 4: Set the AKS cluster context to target the correct cluster using Azure CLI.
       - name: Set AKS Cluster Context
         run: |
-          az aks get-credentials --resource-group ${{ needs.verify-terrrafom.outputs.resource_group_name }} --name ${{ needs.verify-terrrafom.outputs.aks_cluster_name }} --admin
+          az aks get-credentials --resource-group ${{ needs.verify-terrafom.outputs.resource_group_name }} --name ${{ needs.verify-terrafom.outputs.aks_cluster_name }} --admin
 
       # Step 5: Set the Azure CLI defaults to the resource group.
       - name: Set Azure CLI defaults
-        run: az configure --defaults group=${{ needs.verify-terrrafom.outputs.resource_group_name }}
+        run: az configure --defaults group=${{ needs.verify-terrafom.outputs.resource_group_name }}
 
       # Step 6: Create the Azure Storage Secret by updating the secret template.
       - name: Create Azure Storage Secret
