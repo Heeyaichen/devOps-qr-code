@@ -49,16 +49,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: terraform-outputs
-          path: ./terraform-outputs
+          path: infrastructure
 
       # Step 3: Parse the Terraform outputs and store them in the GitHub output file.
       - name: Parse Outputs
         id: parse
         run: |
-          echo "aks_cluster_name=$(jq -r '.aks_cluster_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
-          echo "container_name=$(jq -r '.container_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
-          echo "resource_group_name=$(jq -r '.resource_group_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
-          echo "storage_account_name=$(jq -r '.storage_account_name.value' ./terraform-outputs/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "aks_cluster_name=$(jq -r '.aks_cluster_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "container_name=$(jq -r '.container_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(jq -r '.resource_group_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
+          echo "storage_account_name=$(jq -r '.storage_account_name.value' infrastructure/terraform-outputs.json)" >> $GITHUB_OUTPUT
 
     outputs:
       aks_cluster_name: ${{ steps.parse.outputs.aks_cluster_name }}
