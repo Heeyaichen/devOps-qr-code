@@ -47,9 +47,6 @@ jobs:
       # Step 2: Download the Terraform outputs artifact.
       - name: Download Artifact
         uses: actions/download-artifact@v4
-        with:
-          name: terraform-outputs
-          path: infrastructure
 
       # Step 3: Parse the Terraform outputs and store them in the GitHub output file.
       - name: Parse Outputs
