@@ -96,6 +96,7 @@ jobs:
 
       # Save Terraform outputs as JSON artifact
       - name: Save Terraform Outputs
+        working-directory: ./infrastructure
         run: terraform output -json > terraform-outputs.json
 
       # Upload JSON outputs as artifact
@@ -103,4 +104,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-outputs
-          path: terraform-outputs.json
+          path: infrastructure/terraform-outputs.json
