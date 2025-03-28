@@ -131,7 +131,7 @@ jobs:
           STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$STORAGE_ACCOUNT_CONNECTION_STRING" | base64)
 
           # Update the placeholder text in the secret template with the encoded values.
-          sed -i "s#|<base64-encoded-storage-account-connection-string>|$STORAGE_CONNECTION_STRING_BASE64|#g" k8s/azure-storage-secret.yaml
+          sed -i "s#<base64-encoded-storage-account-connection-string>#$STORAGE_CONNECTION_STRING_BASE64#g" k8s/azure-storage-secret.yaml
 
       - name: Debug Workspace Structure
         run: ls -R .
