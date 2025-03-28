@@ -31,7 +31,7 @@ spec:
                 name: azure-storage-secret
                 key: AZURE_STORAGE_CONNECTION_STRING
           - name: CONTAINER_NAME
-            value: "${{ needs.verify-terrafom.outputs.container_name }}
+            value: "${{ needs.verify-terrafom.outputs.container_name }}"
 ---
 apiVersion: v1
 kind: Service
