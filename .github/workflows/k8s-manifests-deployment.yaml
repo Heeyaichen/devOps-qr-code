@@ -130,10 +130,17 @@ jobs:
           # Create base64 encoded credentials for the storage account connection string.
           STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$STORAGE_ACCOUNT_CONNECTION_STRING" | base64)
 
-          echo $STORAGE_CONNECTION_STRING_BASE64
-
-          # Update the placeholder text in the secret template with the encoded values.
-          sed -i 's#<base64-encoded-storage-account-connection-string>#$STORAGE_CONNECTION_STRING_BASE64#g' k8s/azure-storage-secret.yaml
+          # Create the secret template directly using kubectl
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: azure-storage-secret
+            namespace: default
+          type: Opaque
+          data:
+            AZURE_STORAGE_CONNECTION_STRING: "$STORAGE_CONNECTION_STRING_BASE64"
+          EOF
 
       - name: Debug Workspace Structure
         run: ls -R .
@@ -143,9 +150,6 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.simulate_deployment == 'false' || github.event_name != 'workflow_dispatch' }}
         working-directory: ./k8s
         run: |
-          echo "Applying Azure Storage Secret..."
-          kubectl apply -f azure-storage-secret.yaml
-
           echo "Deploying Backend..."
           kubectl apply -f backend-deployment.yaml
 
