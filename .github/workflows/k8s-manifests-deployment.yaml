@@ -1,7 +1,6 @@
-name:
-  Deploy to Azure Kubernetes Service
-  # Note: Ensure that the secret AZURE_STORAGE_CONNECTION_STRING is set in your GitHub repository.
+# Note: Ensure that the secret AZURE_STORAGE_CONNECTION_STRING is set in your GitHub repository.
 
+name: Deploy to Azure Kubernetes Service
 on:
   # Trigger this workflow when the Terraform Infrastructure and Build and publish image to Docker Hub workflows are completed successfully.
   workflow_run:
@@ -50,13 +49,13 @@ jobs:
 
       # Step 2: Download the Terraform outputs artifact from triggering workflow.
       - name: Download Artifact
-        if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
-        uses: actions/download-artifact@v4
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v9
         with:
+          workflow: terraform-infrastructure.yaml
           name: terraform-outputs
           path: infrastructure
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id || github.run_id }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 3: Parse the Terraform outputs and store them in the GitHub output file.
       - name: Parse Outputs
