@@ -142,13 +142,13 @@ jobs:
         working-directory: ./k8s
         run: |
           echo "Applying Azure Storage Secret..."
-          kubectl apply -f k8s/azure-storage-secret.yaml
+          kubectl apply -f azure-storage-secret.yaml
 
           echo "Deploying Backend..."
-          kubectl apply -f k8s/backend-deployment.yaml
+          kubectl apply -f backend-deployment.yaml
 
           echo "Deploying Frontend..."
-          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f frontend-deployment.yaml
 
       # Step 8: Verify the deployments by checking pods, services.
       - name: Verify Deployments
