@@ -135,7 +135,7 @@ jobs:
 
       # Step 7: Deploy Kubernetes manifests if simulation is disabled.
       - name: Deploy Kubernetes Resources
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.simulate_deployment == false || github.event_name != 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.simulate_deployment == 'false' || github.event_name != 'workflow_dispatch' }}
         working-directory: ./k8s
         run: |
           echo "Applying Azure Storage Secret..."
