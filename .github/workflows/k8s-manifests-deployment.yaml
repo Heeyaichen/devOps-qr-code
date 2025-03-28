@@ -128,13 +128,13 @@ jobs:
       - name: Create Azure Storage Secret
         run: |
           # Create base64 encoded credentials for the storage account connection string.
-          STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$STORAGE_ACCOUNT_CONNECTION_STRING" | base64)
+          STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$STORAGE_ACCOUNT_CONNECTION_STRING" | base64 -w0)
 
           # Escape problematic characters in the base64 string.
           escaped_value=$(printf '%s' "$STORAGE_CONNECTION_STRING_BASE64" | sed 's/[&@|]/\\&/g')
 
           # Update the placeholder in the secret template using a safe delimiter.
-          sed -i "s@<base64-encoded-storage-account-connection-string>@$escaped_value@g" k8s/azure-storage-secret.yaml
+          sed -i "s|<base64-encoded-storage-account-connection-string>|$escaped_value|g" k8s/azure-storage-secret.yaml
 
       - name: Debug Workspace Structure
         run: ls -R .
