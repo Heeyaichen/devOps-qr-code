@@ -3,9 +3,6 @@
 This directory contains Kubernetes manifests for deploying the QR Code Generator application.
 
 ## Contents
-
-- **azure-storage-secret.yaml**  
-  - Defines a Kubernetes Secret to store Azure Storage credentials used for uploading QR code images.
 - **backend-deployment.yaml**  
   - Contains the Deployment and Service definitions for the backend API (FastAPI).
 - **frontend-deployment.yaml**  
@@ -18,7 +15,6 @@ This directory contains Kubernetes manifests for deploying the QR Code Generator
 - A Kubernetes cluster (e.g., AKS).
 - `kubectl` installed and configured to connect to your cluster.
 - An Azure Storage Account with a container for QR codes created using the configuration below.
-- Base64-encoded Azure Storage credentials.
 
 ## Azure Storage Setup
 
@@ -65,18 +61,56 @@ This project uses a declarative approach with YAML manifests to deploy resources
     This declarative approach ensures that your Kubernetes resources are version-controlled and easily reproducible.
 ## Secret Configuration
 
-Before deploying the application, update the `azure-storage-secret.yaml` file with your base64-encoded values of your Azure credentials. For example, to encode a value in PowerShell you can use:
+Before deploying the application, create an Azure Storage Secret for the storage account connection string.
+- Get connection string using storage account name.
+
+```bash
+# bash
+CONNECTION_STRING=$(az storage account show-connection-string \
+--name <STORAGE_ACCOUNT_NAME> \
+--resource-group <RESOURCE_GROUP_NAME> \
+--query connectionString \
+--output tsv)
+```
 ```powershell
-[Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("your-value"))
+# powershell
+$connectionString = az storage account show-connection-string `
+    --name "<STORAGE_ACCOUNT_NAME>" `
+    --resource-group "<RESOURCE_GROUP_NAME>" `
+    --query connectionString `
+    --output tsv
 ```
-or in Bash:
+- Create secret with only the connection string
 ```bash
-echo -n "your-value" | base64
+# bash
+kubectl create secret generic azure-storage-secret \
+--from-literal=AZURE_STORAGE_CONNECTION_STRING="$CONNECTION_STRING" \
+--dry-run=client -o yaml | kubectl apply -f -
 ```
-Apply the secret with:
+```powershell
+# powershell
+kubectl create secret generic azure-storage-secret `
+    --from-literal=AZURE_STORAGE_CONNECTION_STRING="$connectionString" `
+    --dry-run=client -o yaml | kubectl apply -f -
+```   
+- Verify secret creation
 ```bash
-kubectl apply -f azure-storage-secret.yaml
+kubectl get secret azure-storage-secret
 ```
+## Update backend-deployment.yaml for local testing
+````yaml
+# filepath: \k8s\backend-deployment.yaml
+env:
+  - name: AZURE_STORAGE_CONNECTION_STRING
+    valueFrom:
+      secretKeyRef:
+        name: azure-storage-secret
+        key: AZURE_STORAGE_CONNECTION_STRING
+  - name: AZURE_STORAGE_ACCOUNT
+    value: "storage-account-name"    # Replace with actual value
+  - name: AZURE_CONTAINER_NAME
+    value: "container-name"          # Replace with actual value
+````
 
 ## Deployment Steps
 
