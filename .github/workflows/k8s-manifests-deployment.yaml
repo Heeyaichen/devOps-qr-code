@@ -115,7 +115,7 @@ jobs:
           echo "Storage Account: ${{ needs.verify-terrafom.outputs.storage_account_name }}"
           echo "Docker Images: ${{ needs.verify-docker.outputs.api_image }} and ${{ needs.verify-docker.outputs.frontend_image }}"
 
-        # Step 4: Set the AKS cluster context to target the correct cluster using Azure CLI.
+      # Step 4: Set the AKS cluster context to target the correct cluster using Azure CLI.
       - name: Set AKS Cluster Context
         run: |
           az aks get-credentials --resource-group ${{ needs.verify-terrafom.outputs.resource_group_name }} --name ${{ needs.verify-terrafom.outputs.aks_cluster_name }} --admin
@@ -143,25 +143,17 @@ jobs:
           echo "Verifying secret exists..."
           kubectl get secret azure-storage-secret
 
-          # Alternatively, you can use the following command to create the secret directly from the connection string.
-          # Create base64 encoded credentials for the storage account connection string.
-          # STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$STORAGE_ACCOUNT_CONNECTION_STRING" | base64 -w0)
-
-          # Escape problematic characters in the base64 string.
-          # escaped_value=$(printf '%s' "$STORAGE_CONNECTION_STRING_BASE64" | sed 's/[&@|]/\\&/g')
-
-          # Update the placeholder in the secret template using a safe delimiter.
-          # sed -i "s|<base64-encoded-storage-account-connection-string>|$escaped_value|g" k8s/azure-storage-secret.yaml
-
-        # Inject the container name into the backend deployment manifest.
-      - name: Inject Container Name
+      # Step 7: Inject the storage account and container name into the backend deployment manifest.
+      - name: Inject Storage Account and Container Name
         run: |
           sed -i "s|<CONTAINER_NAME>|${{ needs.verify-terrafom.outputs.container_name }}|g" k8s/backend-deployment.yaml
+
+          sed -i "s|<STORAGE_ACCOUNT_NAME>|${{ needs.verify-terrafom.outputs.storage_account_name }}|g" k8s/backend-deployment.yaml
 
       - name: Debug Workspace Structure
         run: ls -R .
 
-      # Step 7: Deploy Kubernetes manifests if simulation is disabled.
+      # Step 8: Deploy Kubernetes manifests if simulation is disabled.
       - name: Deploy Kubernetes Resources
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.simulate_deployment == 'false' || github.event_name != 'workflow_dispatch' }}
         working-directory: ./k8s
@@ -173,7 +165,7 @@ jobs:
           echo "Deploying Frontend..."
           kubectl apply -f frontend-deployment.yaml
 
-      # Step 8: Verify the deployments by checking pods, services.
+      # Step 9: Verify the deployments by checking pods, services.
       - name: Verify Deployments
         run: |
           echo "Checking Pod Status..."
@@ -182,7 +174,7 @@ jobs:
           echo "Checking Services..."
           kubectl get svc
 
-      # Step 9: Collect Debug information (if deployment fails)
+      # Step 10: Collect Debug information (if deployment fails)
       - name: Debug Info (if deployment fails)
         if: failure()
         run: |
@@ -193,7 +185,7 @@ jobs:
             echo "=== End logs for $pod ==="
           done
 
-      # Step 10: Skip Deployment steps in simulation mode.
+      # Step 11: Skip Deployment steps in simulation mode.
       - name: Simulate Deployment
         if: ${{ github.event.inputs.simulate_deployment == true }}
         run: |

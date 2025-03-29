@@ -30,8 +30,11 @@ spec:
               secretKeyRef:
                 name: azure-storage-secret
                 key: AZURE_STORAGE_CONNECTION_STRING
-          - name: CONTAINER_NAME
+          - name: AZURE_STORAGE_ACCOUNT
+            value: "<STORAGE_ACCOUNT_NAME>"
+          - name: AZURE_CONTAINER_NAME
             value: "<CONTAINER_NAME>"
+          
 ---
 apiVersion: v1
 kind: Service
