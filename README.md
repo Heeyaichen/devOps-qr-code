@@ -67,6 +67,9 @@ This version includes:
 
 4. **Kubernetes Deployment**
    - After verifying your resource deployments in the Azure Portal, continue with the Kubernetes deployment as described in the [K8s Module README](./k8s/README.md).
+  
+5. **CI/CD**
+   - For detailed instructions on the automated pipelines—including Docker builds, Terraform provisioning, and Kubernetes deployments—please refer to the [CI/CD GitHub Actions Workflows README](./.github/workflows/README.md).
 
 ## License
 
