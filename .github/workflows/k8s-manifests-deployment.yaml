@@ -124,17 +124,34 @@ jobs:
       - name: Set Azure CLI defaults
         run: az configure --defaults group=${{ needs.verify-terrafom.outputs.resource_group_name }}
 
-      # Step 6: Create the Azure Storage Secret by updating the secret template.
+      # Step 6: Create the Azure Storage Secret using the Azure CLI
       - name: Create Azure Storage Secret
         run: |
+          # Get connection string using storage account name from terraform outputs
+          CONNECTION_STRING=$(az storage account show-connection-string \
+          --name ${{ needs.verify-terrafom.outputs.storage_account_name }} \
+          --resource-group ${{ needs.verify-terrafom.outputs.resource_group_name }} \
+          --query connectionString \
+          --output tsv)
+
+          # Create the secret with the connection string
+          kubectl create secret generic azure-storage-secret \
+          --from-literal=AZURE_STORAGE_CONNECTION_STRING="$CONNECTION_STRING" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+          # Verify secret creation
+          echo "Verifying secret exists..."
+          kubectl get secret azure-storage-secret
+
+          # Alternatively, you can use the following command to create the secret directly from the connection string.
           # Create base64 encoded credentials for the storage account connection string.
-          STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$STORAGE_ACCOUNT_CONNECTION_STRING" | base64 -w0)
+          # STORAGE_CONNECTION_STRING_BASE64=$(echo -n "$STORAGE_ACCOUNT_CONNECTION_STRING" | base64 -w0)
 
           # Escape problematic characters in the base64 string.
-          escaped_value=$(printf '%s' "$STORAGE_CONNECTION_STRING_BASE64" | sed 's/[&@|]/\\&/g')
+          # escaped_value=$(printf '%s' "$STORAGE_CONNECTION_STRING_BASE64" | sed 's/[&@|]/\\&/g')
 
           # Update the placeholder in the secret template using a safe delimiter.
-          sed -i "s|<base64-encoded-storage-account-connection-string>|$escaped_value|g" k8s/azure-storage-secret.yaml
+          # sed -i "s|<base64-encoded-storage-account-connection-string>|$escaped_value|g" k8s/azure-storage-secret.yaml
 
         # Inject the container name into the backend deployment manifest.
       - name: Inject Container Name
