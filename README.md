@@ -5,7 +5,7 @@ It generates QR Codes for the provided URL, the front-end is in NextJS and the A
 
 *This project is a modified version of the original work by [Rishab Kumar](https://github.com/rishabkumar7), updated to use Azure cloud services.*
 
-![Image](https://github.com/user-attachments/assets/4b9dd534-1380-4736-a3ad-8616434b0030)
+![Image](https://github.com/user-attachments/assets/008feca6-5b51-499e-8c20-4375e47c8003)
 
 ## Application
 
