@@ -54,6 +54,7 @@ The base project was created by [Rishab Kumar](https://github.com/rishabkumar7)
 This version includes:
 - Migration from AWS S3 to Azure Blob Storage.
 - Updated instructions for local development with Azure integration.
+- CI/CD workflows for handling Docker image builds, infrastructure provisioning via Terraform, and application deployment to AKS.
 
 ## Deployment Steps
 
